@@ -40,6 +40,20 @@ public class Match {
      * Play match and return the winner
      */
     public Player play() {
+        // Tell players about the settings
+        printAll("Settings gameType " + settings.getGameType());
+        printAll("Settings gameMode " + settings.getGameMode());
+        printAll("Settings timeBank " + settings.getTimeBank());
+        printAll("Settings timePerMove " + settings.getTimePerMove());
+        printAll("Settings handsPerLevel " + settings.getHandsPerLevel());
+        for (Player player : players) {
+            player.println("Settings yourBot " + player.getName());
+        }
+
+        // Print set positions
+        printAll(players.get(0).getName() + " seat 0");
+        printAll(players.get(1).getName() + " seat 1");
+
         for (;;) {
             if (players.get(0).getStack() == 0) {
                 return players.get(1);
