@@ -164,8 +164,9 @@ public class Match {
                 return false;
             } else if (move.getAction() == Move.Action.RAISE) {
                 playersToAct = players.size() - 1;
+            } else {
+                playersToAct--;
             }
-            playersToAct--;
         }
 
         // Reset bets
