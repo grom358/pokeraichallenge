@@ -48,6 +48,8 @@ public class Match {
                 return players.get(0);
             }
             playRound();
+            // Move button
+            onButton = (onButton + 1) % players.size();
         }
     }
 
