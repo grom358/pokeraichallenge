@@ -60,6 +60,11 @@ public class Match {
         printAll("Match bigBlind " + bigBlind);
         printAll("Match onButton " + players.get(onButton).getName());
 
+        // Reset bets
+        for (Player player : players) {
+            player.resetBet();
+        }
+
         // Post the blinds
         post(players.get(onButton), smallBlind);
         post(players.get((onButton + 1) % players.size()), bigBlind);
