@@ -127,7 +127,9 @@ public class Match {
         }
 
         // Print stack information
-
+        for (Player player : players) {
+            System.out.println(player.getName() + " stack " + player.getStack());
+        }
 
         int playersToAct = 2;
         while (playersToAct > 0) {
