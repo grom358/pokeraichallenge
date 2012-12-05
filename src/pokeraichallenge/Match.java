@@ -27,7 +27,6 @@ public class Match {
     private int currentBet;
     private int minRaise;
     private int onButton, onTurn;
-    private int postedSmall, postedBig; // The actual posted blinds
     private List<Card> board;
     private Random random = new SecureRandom();
 
@@ -98,8 +97,8 @@ public class Match {
         // then the amount that puts a player all in becomes the required blind
         int requiredSmall = Math.min(smallBlind, big.getStack());
         int requiredBig = Math.min(bigBlind, small.getStack());
-        postedSmall = post(small, requiredSmall);
-        postedBig = post(big, requiredBig);
+        int postedSmall = post(small, requiredSmall);
+        int postedBig = post(big, requiredBig);
         pot = postedSmall << 1;
         sidepot = postedBig - postedSmall;
 
