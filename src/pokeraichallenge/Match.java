@@ -3,9 +3,11 @@
  */
 package pokeraichallenge;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import poker.Card;
 import poker.CardSet;
 import poker.Hand;
@@ -27,6 +29,7 @@ public class Match {
     private int onButton, onTurn;
     private int postedSmall, postedBig; // The actual posted blinds
     private List<Card> board;
+    private Random random = new SecureRandom();
 
     public Match(Settings settings, List<Player> players) {
         this.settings = settings;
@@ -102,7 +105,7 @@ public class Match {
 
         // Shuffle deck
         List<Card> deck = Card.newDeck();
-        Collections.shuffle(deck);
+        Collections.shuffle(deck, random);
 
         // Deal starting hands
         for (Player player : players) {
