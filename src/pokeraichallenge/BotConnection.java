@@ -22,60 +22,41 @@ import java.util.concurrent.TimeUnit;
  */
 public class BotConnection {
     private Process process;
-    private InputHandler input;
-    private OutputHandler output;
-    private Thread inputThread;
-    private Thread outputThread;
+    private BlockingQueue<String> inputQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<String> outputQueue = new ArrayBlockingQueue<>(100);
 
     public BotConnection(Process process) {
         this.process = process;
     }
 
     public void open() {
-        input = new InputHandler(process.getInputStream());
-        output = new OutputHandler(process.getOutputStream());
+        InputHandler input = new InputHandler(process.getInputStream(), inputQueue);
+        OutputHandler output = new OutputHandler(process.getOutputStream(), outputQueue);
 
         // Start up handler threads
-        inputThread = new Thread(input);
-        inputThread.start();
-        outputThread = new Thread(output);
-        outputThread.start();
+        (new Thread(input)).start();
+        (new Thread(output)).start();
     }
 
     public void close() {
-        input.isAlive = false;
-        output.isAlive = false;
-
-        // Wait for threads to die
-        try {
-            inputThread.join(1000);
-            outputThread.join(1000);
-        } catch (InterruptedException ex) {
-            // TODO
-        }
-
-        // Cleanup resources
-        try {
-            process.getInputStream().close();
-        } catch (IOException ex) {
-            // TODO
-        }
-
-        try {
-            process.getOutputStream().close();
-        } catch (IOException ex) {
-            // TODO
-        }
-
-        process.destroy(); // Kill the process
+        outputQueue.offer("STOP"); // Poison value to stop OutputHandler consumer
+        (new Thread(new CloseHandler(process))).start();
     }
 
     public void println(String message) {
-        output.println(message);
+        outputQueue.offer(message);
     }
 
     public String readLine(long timeout) {
-        return input.readLine(timeout, TimeUnit.MILLISECONDS);
+        try {
+            String line = inputQueue.poll(timeout, TimeUnit.MILLISECONDS);
+            if (line != null) {
+                return line;
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+        return "fold 0";
     }
 
     /**
@@ -83,48 +64,24 @@ public class BotConnection {
      */
     static private class InputHandler implements Runnable {
         private InputStream is;
-        public volatile boolean isAlive = false;
         private BlockingQueue<String> inputQueue;
 
-        public InputHandler(InputStream is) {
+        public InputHandler(InputStream is, BlockingQueue<String> inputQueue) {
             this.is = is;
-            this.inputQueue = new ArrayBlockingQueue<>(1); // Only keep 1 line
-        }
-
-        public String readLine(long timeout, TimeUnit unit) {
-            if (!isAlive) {
-                return "fold 0";
-            }
-            try {
-                String item = inputQueue.poll(timeout, unit);
-                if (item != null) {
-                    return item;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            return "fold 0";
+            this.inputQueue = inputQueue;
         }
 
         @Override
         public void run() {
-            isAlive = true;
             try (InputStreamReader isr = new InputStreamReader(is);
                 BufferedReader br = new BufferedReader(isr)) {
-                while (isAlive) {
-                    String line = br.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    // We only ever expect to get a single line from a bot
-                    // therefore only keep the last line received
-                    inputQueue.clear();
+                String line;
+                while ((line = br.readLine()) != null) {
                     inputQueue.offer(line);
                 }
             } catch (IOException e) {
                 // TODO: Log error
             } finally {
-                isAlive = false;
                 try {
                     is.close();
                 } catch (IOException e) {
@@ -139,37 +96,26 @@ public class BotConnection {
      */
     static private class OutputHandler implements Runnable {
         private OutputStream os;
-        public volatile boolean isAlive = false;
         private BlockingQueue<String> outputQueue;
 
-        public OutputHandler(OutputStream os) {
+        public OutputHandler(OutputStream os, BlockingQueue<String> outputQueue) {
             this.os = os;
-            this.outputQueue = new ArrayBlockingQueue<>(10);
-        }
-
-        public void println(String message) {
-            if (isAlive) {
-                try {
-                    outputQueue.offer(message, 1, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+            this.outputQueue = outputQueue;
         }
 
         @Override
         public void run() {
-            isAlive = true;
             try (OutputStreamWriter osr = new OutputStreamWriter(os);
                 BufferedWriter bw = new BufferedWriter(osr)) {
-                while (isAlive) {
+                while (true) {
                     try {
-                        String line = outputQueue.poll(1, TimeUnit.SECONDS);
-                        if (line != null) {
-                            bw.write(line);
-                            bw.newLine();
-                            bw.flush();
+                        String line = outputQueue.take();
+                        if (line.equals("STOP")) {
+                           break;
                         }
+                        bw.write(line);
+                        bw.newLine();
+                        bw.flush();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -177,13 +123,41 @@ public class BotConnection {
             } catch (IOException e) {
                 // TODO: Log error
             } finally {
-                isAlive = false;
                 try {
                     os.close();
                 } catch (IOException e) {
                     // TODO: Log error
                 }
             }
+        }
+    }
+
+    /**
+     * Handles process cleanup
+     */
+    static private class CloseHandler implements Runnable {
+        private Process process;
+
+        public CloseHandler(Process process) {
+            this.process = process;
+        }
+
+        @Override
+        public void run() {
+            // Cleanup resources
+            try {
+                process.getInputStream().close();
+            } catch (IOException ex) {
+                // TODO
+            }
+
+            try {
+                process.getOutputStream().close();
+            } catch (IOException ex) {
+                // TODO
+            }
+
+            process.destroy(); // Kill the process
         }
     }
 }
