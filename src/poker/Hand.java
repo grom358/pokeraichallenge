@@ -111,11 +111,11 @@ public class Hand implements Comparable<Hand> {
             }
             if (threeOfKind == null || topPair == null || secondPair == null) {
                 int kindCount = Long.bitCount(test);
-                if (kindCount == 3 && threeOfKind == null) {
+                if (kindCount >= 3 && threeOfKind == null) {
                     threeOfKind = new CardSet(test);
-                } else if (kindCount == 2 && topPair == null) {
+                } else if (kindCount >= 2 && topPair == null) {
                     topPair = new CardSet(test);
-                } else if (kindCount == 2 && secondPair == null) {
+                } else if (kindCount >= 2 && secondPair == null) {
                     secondPair = new CardSet(test);
                 }
             }
