@@ -17,10 +17,12 @@ public class Player {
     private int stack;
     private boolean allIn;
     private long timeBank;
+    private Settings settings;
     private List<Card> hand;
 
     public Player(Settings settings, String name, BotConnection conn) {
         this.name = name;
+        this.settings = settings;
         this.stack = settings.getInitialStack();
         this.timeBank = settings.getTimeBank();
         this.allIn = false;
@@ -86,6 +88,10 @@ public class Player {
         timeBank -= System.currentTimeMillis() - start;
         if (timeBank < 0) {
             timeBank = 0;
+        }
+        timeBank += settings.getTimePerMove();
+        if (timeBank > settings.getTimeBank()) {
+            timeBank = settings.getTimeBank();
         }
         return line;
     }
