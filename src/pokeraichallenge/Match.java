@@ -63,6 +63,12 @@ public class Match {
                 return players.get(0);
             }
             playRound();
+
+            roundNo++;
+            if (roundNo % settings.getHandsPerLevel() == 0) {
+                increaseBlinds();
+            }
+
             // Move button
             onButton = (onButton + 1) % players.size();
         }
@@ -140,12 +146,25 @@ public class Match {
                 }
             }
         }
+    }
 
-        roundNo++;
-        if (roundNo % settings.getHandsPerLevel() == 0) {
-            smallBlind <<= 1;
-            bigBlind <<= 1;
+    private void increaseBlinds() {
+        if (smallBlind >= 1000) {
+            // Maximum small blind
+        } else if (smallBlind >= 500) {
+            smallBlind += 250;
+        } else if (smallBlind >= 200) {
+            smallBlind += 100;
+        } else if (smallBlind >= 100) {
+            smallBlind += 50;
+        } else if (smallBlind >= 50) {
+            smallBlind += 25;
+        } else if (smallBlind >= 30) {
+            smallBlind += 20;
+        } else {
+            smallBlind += 10;
         }
+        bigBlind = smallBlind * 2;
     }
 
     private boolean bettingRound() {
