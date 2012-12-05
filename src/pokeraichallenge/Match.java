@@ -20,11 +20,12 @@ public class Match {
     private int roundNo;
     private int smallBlind;
     private int bigBlind;
-    private int pot;
-    private int sidepot;
+    private int pot; // Called bets go into the pot
+    private int sidepot; // The uncalled bet
     private int currentBet;
     private int minRaise;
     private int onButton, onTurn;
+    private int postedSmall, postedBig; // The actual posted blinds
     private List<Card> board;
 
     public Match(Settings settings, List<Player> players) {
@@ -76,14 +77,22 @@ public class Match {
         printAll("Match bigBlind " + bigBlind);
         printAll("Match onButton " + players.get(onButton).getName());
 
-        // Reset bets
+        // Print out stack information
         for (Player player : players) {
-            player.resetBet();
+            System.out.println(player.getName() + " stack " + player.getStack());
         }
 
         // Post the blinds
-        post(players.get(onButton), smallBlind);
-        post(players.get((onButton + 1) % players.size()), bigBlind);
+        Player small = players.get(onButton);
+        Player big = players.get((onButton + 1) % players.size());
+        // Since we are playing heads up, if a blind puts a player all in
+        // then the amount that puts a player all in becomes the required blind
+        int requiredSmall = Math.min(smallBlind, big.getStack());
+        int requiredBig = Math.min(bigBlind, small.getStack());
+        postedSmall = post(small, requiredSmall);
+        postedBig = post(big, requiredBig);
+        pot = postedSmall << 1;
+        sidepot = postedBig - postedSmall;
 
         // Shuffle deck
         List<Card> deck = Card.newDeck();
@@ -103,8 +112,6 @@ public class Match {
         board = new ArrayList<>(5);
 
         // Pre-flop
-        pot = bigBlind;
-        sidepot = smallBlind;
         currentBet = minRaise = bigBlind;
         onTurn = (onButton + 2) % players.size();
         if (bettingRound()) {
@@ -142,7 +149,7 @@ public class Match {
     }
 
     private boolean bettingRound() {
-        // Skip betting if player is all-in
+        // Skip betting if a player is all-in
         if (players.get(0).isAllIn() || players.get(1).isAllIn()) {
             return true;
         }
@@ -151,6 +158,10 @@ public class Match {
         for (Player player : players) {
             System.out.println(player.getName() + " stack " + player.getStack());
         }
+
+        // Print pot information
+        System.out.println("Match pot " + pot);
+        System.out.println("Match sidepot [" + sidepot + "]");
 
         int playersToAct = 2;
         while (playersToAct > 0) {
@@ -168,12 +179,6 @@ public class Match {
                 playersToAct--;
             }
         }
-
-        // Reset bets
-        for (Player player : players) {
-            player.resetBet();
-        }
-
         return true;
     }
 
@@ -182,15 +187,14 @@ public class Match {
         Player opponent = players.get((onTurn + 1) % players.size());
 
         Move move = requestMove(player);
-        int requiredAmount = currentBet - player.getBet();
 
         // Change check to fold if there is a current bet
-        if (requiredAmount > 0 && move.getAction() == Move.Action.CHECK) {
+        if (currentBet > 0 && move.getAction() == Move.Action.CHECK) {
             move = Move.FOLD;
         }
 
         // Change call to check if no current bet
-        if (requiredAmount == 0 && move.getAction() == Move.Action.CALL) {
+        if (currentBet == 0 && move.getAction() == Move.Action.CALL) {
             move = Move.CHECK;
         }
 
@@ -206,12 +210,12 @@ public class Match {
         // Handle moves
         int amount = move.getAmount();
         if (move.getAction() == Move.Action.CALL) {
-            amount = Math.min(requiredAmount, player.getStack());
+            amount = Math.min(sidepot, player.getStack());
             amount = player.takeChips(amount);
-            pot += sidepot + requiredAmount;
-            sidepot = 0;
+            pot += amount * 2;
+            sidepot -= amount;
         } else if (move.getAction() == Move.Action.RAISE) {
-            pot += player.takeChips(sidepot); // Call existing bet
+            pot += sidepot + player.takeChips(sidepot); // Call existing bet
             amount = Math.max(minRaise, amount); // Must raise by minimum
             amount = Math.min(amount, player.getStack()); // Cap raise to players stack
             amount = player.takeChips(amount);
@@ -241,14 +245,23 @@ public class Match {
         hand.addAll(players.get(1).getCards());
         p2 = Hand.eval(new CardSet(hand)).getValue();
 
-        int prize = pot;
+        //System.out.println("DEBUG: p1=" + p1 + " p2=" + p2);
+
+        int prize = pot + sidepot;
         if (p1 == p2) {
             // Split pot
             prize = prize >> 1;
-            players.get(0).giveChips(prize);
-            players.get(1).giveChips(prize);
-            printAll(players.get(0).getName() + " wins " + prize);
-            printAll(players.get(1).getName() + " wins " + prize);
+            int leftOver = (pot + sidepot) - (prize << 1);
+            int leftPos = (onButton + 1) % players.size();
+            for (int i = 0, n = players.size(); i < n; ++i) {
+                int p = prize;
+                if (i == leftPos) {
+                    // Left of the dealer gets the left over chips
+                    p += leftOver;
+                }
+                players.get(i).giveChips(prize);
+                printAll(players.get(i).getName() + " wins " + prize);
+            }
         } else if (p1 < p2) {
             Player winner = players.get(1);
             winner.giveChips(prize);
@@ -260,9 +273,10 @@ public class Match {
         }
     }
 
-    private void post(Player player, int amount) {
+    private int post(Player player, int amount) {
         amount = player.takeChips(amount);
         printAll(player.getName() + " post " + amount);
+        return amount;
     }
 
     private String toString(List<Card> cards) {

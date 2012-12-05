@@ -18,14 +18,12 @@ public class Player {
     private boolean allIn;
     private long timeBank;
     private List<Card> hand;
-    private int bet;
 
     public Player(Settings settings, String name, BotConnection conn) {
         this.name = name;
         this.stack = settings.getInitialStack();
         this.timeBank = settings.getTimeBank();
         this.allIn = false;
-        this.bet = 0;
         this.conn = conn;
     }
 
@@ -61,20 +59,11 @@ public class Player {
         timeBank += time;
     }
 
-    public int getBet() {
-        return bet;
-    }
-
-    public void resetBet() {
-        bet = 0;
-    }
-
     public int takeChips(int amount) {
         if (amount > stack) {
             amount = stack;
         }
         stack -= amount;
-        bet += amount;
         if (stack == 0) {
             allIn = true;
         }
