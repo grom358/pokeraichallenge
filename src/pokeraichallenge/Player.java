@@ -5,6 +5,7 @@ package pokeraichallenge;
 
 import java.util.List;
 import poker.Card;
+import poker.CardList;
 
 /**
  * A player in Texas Holdem
@@ -18,7 +19,7 @@ public class Player {
     private boolean allIn;
     private long timeBank;
     private Settings settings;
-    private List<Card> hand;
+    private CardList hand;
 
     public Player(Settings settings, String name, BotConnection conn) {
         this.name = name;
@@ -45,11 +46,11 @@ public class Player {
         return allIn;
     }
 
-    public void setCards(List<Card> hand) {
+    public void setCards(CardList hand) {
         this.hand = hand;
     }
 
-    public List<Card> getCards() {
+    public CardList getCards() {
         return hand;
     }
 

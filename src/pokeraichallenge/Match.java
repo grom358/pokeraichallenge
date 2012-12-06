@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import poker.Card;
+import poker.CardList;
 import poker.CardSet;
 import poker.Hand;
 
@@ -27,7 +28,7 @@ public class Match {
     private int currentBet;
     private int minRaise;
     private int onButton, onTurn;
-    private List<Card> board;
+    private CardList board;
     private Random random = new SecureRandom();
 
     public Match(Settings settings, List<Player> players) {
@@ -108,16 +109,15 @@ public class Match {
 
         // Deal starting hands
         for (Player player : players) {
-            List<Card> hand = new ArrayList<>(2);
+            CardList hand = new CardList(2);
             hand.add(deck.remove(deck.size() - 1));
             hand.add(deck.remove(deck.size() - 1));
             player.setCards(hand);
-            String strHand = toString(hand);
-            player.println(player.getName() + " hand " + strHand);
-            System.out.println(player.getName() + " hand " + strHand);
+            player.println(player.getName() + " hand " + hand);
+            System.out.println(player.getName() + " hand " + hand);
         }
 
-        board = new ArrayList<>(5);
+        board = new CardList(5);
 
         // Pre-flop
         currentBet = minRaise = bigBlind;
@@ -129,19 +129,19 @@ public class Match {
             board.add(deck.remove(deck.size() - 1));
             board.add(deck.remove(deck.size() - 1));
             board.add(deck.remove(deck.size() - 1));
-            printAll("Match table " + toString(board));
+            printAll("Match table " + board);
             if (bettingRound()) {
                 // Turn
                 currentBet = 0;
                 onTurn = (onButton + 1) % players.size();
                 board.add(deck.remove(deck.size() - 1));
-                printAll("Match table " + toString(board));
+                printAll("Match table " + board);
                 if (bettingRound()) {
                     // River
                     currentBet = 0;
                     onTurn = (onButton + 1) % players.size();
                     board.add(deck.remove(deck.size() - 1));
-                    printAll("Match table " + toString(board));
+                    printAll("Match table " + board);
                     if (bettingRound()) {
                         showdown();
                     }
@@ -253,7 +253,7 @@ public class Match {
 
     private void showdown() {
         for (Player player : players) {
-            printAll(player.getName() + " hand " + toString(player.getCards()));
+            printAll(player.getName() + " hand " + player.getCards());
         }
 
         int p1, p2;
@@ -298,22 +298,6 @@ public class Match {
         amount = player.takeChips(amount);
         printAll(player.getName() + " post " + amount);
         return amount;
-    }
-
-    private String toString(List<Card> cards) {
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        boolean isFirst = true;
-        for (Card card : cards) {
-            if (isFirst) {
-                isFirst = false;
-            } else {
-                sb.append(',');
-            }
-            sb.append(card);
-        }
-        sb.append(']');
-        return sb.toString();
     }
 
     /**
