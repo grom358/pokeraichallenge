@@ -40,6 +40,10 @@ public class Match {
         this.onButton = 0;
     }
 
+    private void debug(String message) {
+        System.out.println(message);
+    }
+
     /**
      * Play match and return the winner
      */
@@ -88,7 +92,7 @@ public class Match {
 
         // Print out stack information
         for (Player player : players) {
-            System.out.println(player.getName() + " stack " + player.getStack());
+            debug(player.getName() + " stack " + player.getStack());
         }
 
         // Post the blinds
@@ -114,7 +118,7 @@ public class Match {
             hand.add(deck.remove(deck.size() - 1));
             player.setCards(hand);
             player.println(player.getName() + " hand " + hand);
-            System.out.println(player.getName() + " hand " + hand);
+            debug(player.getName() + " hand " + hand);
         }
 
         board = new CardList(5);
@@ -177,12 +181,12 @@ public class Match {
 
         // Print stack information
         for (Player player : players) {
-            System.out.println(player.getName() + " stack " + player.getStack());
+            debug(player.getName() + " stack " + player.getStack());
         }
 
         // Print pot information
-        System.out.println("Match pot " + pot);
-        System.out.println("Match sidepot [" + sidepot + "]");
+        debug("Match pot " + pot);
+        debug("Match sidepot [" + sidepot + "]");
 
         int playersToAct = 2;
         while (playersToAct > 0) {
@@ -215,7 +219,7 @@ public class Match {
         }
 
         // Change call to check if no current bet
-        if (currentBet == 0 && move.getAction() == Move.Action.CALL) {
+        if (sidepot == 0 && move.getAction() == Move.Action.CALL) {
             move = Move.CHECK;
         }
 
@@ -266,8 +270,6 @@ public class Match {
         hand.addAll(players.get(1).getCards());
         p2 = Hand.eval(new CardSet(hand)).getValue();
 
-        //System.out.println("DEBUG: p1=" + p1 + " p2=" + p2);
-
         int prize = pot + sidepot;
         if (p1 == p2) {
             // Split pot
@@ -307,7 +309,7 @@ public class Match {
         for (Player player : players) {
             player.println(message);
         }
-        System.out.println(message);
+        debug(message);
     }
 
     /**
