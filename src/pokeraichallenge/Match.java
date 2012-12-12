@@ -25,7 +25,6 @@ public class Match {
     private int bigBlind;
     private int pot; // Called bets go into the pot
     private int sidepot; // The uncalled bet
-    private int currentBet;
     private int minRaise;
     private int onButton, onTurn;
     private CardList board;
@@ -124,11 +123,10 @@ public class Match {
         board = new CardList(5);
 
         // Pre-flop
-        currentBet = minRaise = bigBlind;
+        minRaise = bigBlind;
         onTurn = (onButton + 2) % players.size();
         if (bettingRound()) {
             // Flop
-            currentBet = 0;
             onTurn = (onButton + 1) % players.size();
             board.add(deck.remove(deck.size() - 1));
             board.add(deck.remove(deck.size() - 1));
@@ -136,13 +134,11 @@ public class Match {
             printAll("Match table " + board);
             if (bettingRound()) {
                 // Turn
-                currentBet = 0;
                 onTurn = (onButton + 1) % players.size();
                 board.add(deck.remove(deck.size() - 1));
                 printAll("Match table " + board);
                 if (bettingRound()) {
                     // River
-                    currentBet = 0;
                     onTurn = (onButton + 1) % players.size();
                     board.add(deck.remove(deck.size() - 1));
                     printAll("Match table " + board);
@@ -214,7 +210,7 @@ public class Match {
         Move move = requestMove(player);
 
         // Change check to fold if there is a current bet
-        if (currentBet > 0 && move.getAction() == Move.Action.CHECK) {
+        if (sidepot > 0 && move.getAction() == Move.Action.CHECK) {
             move = Move.FOLD;
         }
 
@@ -245,7 +241,6 @@ public class Match {
             amount = Math.min(amount, player.getStack()); // Cap raise to players stack
             amount = player.takeChips(amount);
             sidepot = amount;
-            currentBet += amount; // Increase required bet
             minRaise = amount;
         }
 
@@ -261,14 +256,21 @@ public class Match {
         }
 
         int p1, p2;
+        Hand h1, h2;
 
         List<Card> hand = new ArrayList<>(board);
         hand.addAll(players.get(0).getCards());
-        p1 = Hand.eval(new CardSet(hand)).getValue();
+        h1 = Hand.eval(new CardSet(hand));
+        p1 = h1.getValue();
+
+        debug(players.get(0).getName() + " has " + h1);
 
         hand = new ArrayList<>(board);
         hand.addAll(players.get(1).getCards());
-        p2 = Hand.eval(new CardSet(hand)).getValue();
+        h2 = Hand.eval(new CardSet(hand));
+        p2 = h2.getValue();
+
+        debug(players.get(1).getName() + " has " + h2);
 
         int prize = pot + sidepot;
         if (p1 == p2) {
