@@ -239,6 +239,7 @@ public class Match {
             pot += sidepot + player.takeChips(sidepot); // Call existing bet
             amount = Math.max(minRaise, amount); // Must raise by minimum
             amount = Math.min(amount, player.getStack()); // Cap raise to players stack
+            amount = Math.min(amount, opponent.getStack()); // Cap raise to opponents stack
             amount = player.takeChips(amount);
             sidepot = amount;
             minRaise = amount;
