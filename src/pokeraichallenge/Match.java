@@ -221,7 +221,9 @@ public class Match {
 
         if (move.getAction() == Move.Action.RAISE) {
             // If opponent is all in, change to call
-            if (opponent.isAllIn()) {
+            if (player.isAllIn() || opponent.isAllIn()) {
+                move = Move.CALL;
+            } else if (player.getStack() < sidepot) {
                 move = Move.CALL;
             } else if (player.getStack() < minRaise) {
                 move = Move.CALL;
