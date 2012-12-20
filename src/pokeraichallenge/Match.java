@@ -123,7 +123,6 @@ public class Match {
         board = new CardList(5);
 
         // Pre-flop
-        minRaise = bigBlind;
         onTurn = (onButton + 2) % players.size();
         if (bettingRound()) {
             // Flop
@@ -183,6 +182,9 @@ public class Match {
         // Print pot information
         debug("Match pot " + pot);
         debug("Match sidepot [" + sidepot + "]");
+
+        // Set minimum raise to the big blind
+        minRaise = bigBlind;
 
         int playersToAct = 2;
         while (playersToAct > 0) {
